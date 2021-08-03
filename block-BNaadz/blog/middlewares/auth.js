@@ -1,4 +1,5 @@
 var User = require('../models/user-model');
+var Article = require('../models/article-model');
 
 module.exports = {
     loggedInUser : (req, res, next) => {
@@ -23,5 +24,20 @@ module.exports = {
             res.locals.user = null;
             next();
         }
+    },
+
+    userAllow : (req, res, next) => {
+        console.log("hello middleware userAllow")
+        console.log(req.params)
+        var slug = req.params.slug;
+        console.log(slug)
+        Article.findOne({slug}).populate('author', 'firstName lastName email').exec((err, article) => {
+            if(err) return next(err);
+            if(req.session.userId === article.author.id) {
+                next();
+            } else {
+                res.redirect('/articles/' + slug);
+            }
+        })
     }
 }

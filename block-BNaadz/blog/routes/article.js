@@ -19,8 +19,9 @@ router.get('/new', auth.loggedInUser, (req, res, next) => {
   router.get('/:slug', (req, res, next) => {
     var slug = req.params.slug;
     Article.findOne({slug}).populate('comments author', 'firstName lastName email').exec((err, article) => {
-        // console.log(err, article);
+        console.log(err, article);
         if(err) return next(err);
+
         res.render('single-article', {article});
     })
 })
@@ -36,6 +37,7 @@ router.use(auth.loggedInUser);
   })
   
 
+// router.use(auth.userAllow);
 
   router.get('/:slug/likes', (req, res, next) => {
       var slug = req.params.slug;
@@ -45,7 +47,7 @@ router.use(auth.loggedInUser);
       } )
   })
 
-  router.get('/:slug/edit', (req, res, next) => {
+  router.get('/:slug/edit', auth.userAllow, (req, res, next) => {
         var slug = req.params.slug;
         Article.findOne({slug}, (err, article) => {
             if(err) return next(err);
@@ -54,36 +56,35 @@ router.use(auth.loggedInUser);
   })
 
   router.post('/:slug', (req, res, next) => {
-      var slug = req.params.slug;
-      Article.findOneAndUpdate(slug, req.body, (err, article) => {
-          res.redirect('/articles/' + slug);
-      })
+    var slug = req.params.slug;
 
+    Article.findOneAndUpdate({slug}, req.body, (err, article) => {
+        res.redirect('/articles/' + slug);
+    })
+
+})
+
+
+  router.get('/:slug/delete', auth.userAllow, (req, res, next) => {
+        var slug = req.params.slug;
+        Article.findOneAndRemove(slug, (err, article) => {
+            res.redirect('/articles');
+        }) 
   })
 
-  router.get('/:slug/delete', (req, res, next) => {
-      var slug = req.params.slug;
-      Article.findOneAndRemove(slug, (err, article) => {
-          res.redirect('/articles');
-      })
-  })
 
   router.post('/:slug/comments', (req, res, next) => {
-      var slug = req.params.slug;
-      req.body.articleId = slug;
-        Comment.create(req.body, (err, comment) => {
-            if(err) return next(err);
-            Article.findOneAndUpdate(slug, {$push : {comments : comment._id}}, (err, updatedArticle) => {
-                if(err) return next(err);
-                console.log(updatedArticle)
-                res.redirect('/articles/' + slug);
-            })
-        })
-  })
-
-
-
-
+    var slug = req.params.slug;
+    req.body.articleId = slug;
+      Comment.create(req.body, (err, comment) => {
+          if(err) return next(err);
+          Article.findOneAndUpdate({slug}, {$push : {comments : comment._id}}, (err, updatedArticle) => {
+              if(err) return next(err);
+              console.log(updatedArticle);
+              res.redirect('/articles/' + slug);
+          })
+      })
+})
 
 
 module.exports = router;
