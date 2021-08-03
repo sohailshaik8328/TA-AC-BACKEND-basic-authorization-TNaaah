@@ -5,7 +5,7 @@ var Comment = require('../models/comment-model');
 
 router.get('/:slug/delete', (req, res, next) => {
     var slug = req.params.slug;
-    Comment.findOneAndRemove(slug, (err, comment) => {
+    Comment.findOneAndRemove({slug}, (err, comment) => {
         if(err) return next(err);
         Article.findOneAndUpdate(comment.articleId, {$pull : {comments : comment._id}}, (err, article) => {
             // console.log(article)
